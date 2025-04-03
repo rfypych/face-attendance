@@ -22,11 +22,38 @@ const AdminDashboard = () => {
   const webcamRef = useRef(null);
   const navigate = useNavigate();
 
-  // Konfigurasi webcam
+  // Konfigurasi webcam yang diperbarui
   const videoConstraints = {
-    width: 480,
-    height: 480,
-    facingMode: "user"
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    facingMode: { ideal: "environment" }, // Gunakan kamera belakang di mobile
+    aspectRatio: 1
+  };
+
+  // Fungsi untuk mendeteksi perangkat mobile
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  // Fungsi untuk menangani error kamera
+  const handleCameraError = (error) => {
+    console.error('Error accessing camera:', error);
+    setMessage({ 
+      text: 'Tidak dapat mengakses kamera. Pastikan Anda telah memberikan izin kamera dan menggunakan browser yang mendukung.', 
+      type: 'danger' 
+    });
+  };
+
+  // Fungsi untuk meminta izin kamera
+  const requestCameraPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      return true;
+    } catch (error) {
+      handleCameraError(error);
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -311,8 +338,13 @@ const AdminDashboard = () => {
     }
   };
 
-  // Fungsi untuk mengubah mode upload
-  const toggleUploadMode = () => {
+  // Fungsi untuk mengubah mode upload yang diperbarui
+  const toggleUploadMode = async () => {
+    if (!useCamera) {
+      // Jika beralih ke mode kamera, minta izin terlebih dahulu
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) return;
+    }
     setUseCamera(!useCamera);
     // Reset data dari mode sebelumnya
     if (useCamera) {
@@ -351,7 +383,7 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <div className="row">
-            <div className="col-md-4">
+            <div className={`col-12 ${isMobileDevice() ? 'mb-4' : 'col-md-4'}`}>
               <div className="card">
                 <div className="card-header">
                   <h4>Daftar Pengguna</h4>
@@ -360,51 +392,51 @@ const AdminDashboard = () => {
                   {users.length === 0 ? (
                     <p>Tidak ada pengguna terdaftar</p>
                   ) : (
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Nama</th>
-                          <th>Kelas</th>
-                          <th>Jumlah Foto</th>
-                          <th>Tanggal Daftar</th>
-                          <th>Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users.map(user => (
-                          <tr 
-                            key={user.id} 
-                            className={`${selectedUser?.id === user.id ? 'active' : ''}`}
-                            onClick={() => handleUserClick(user)}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <td>{user.id}</td>
-                            <td>{user.name}</td>
-                            <td>{user.class}</td>
-                            <td>{user.embeddings ? user.embeddings.length : 0}</td>
-                            <td>{new Date(user.created_at).toLocaleString()}</td>
-                            <td>
-                              <button 
-                                className="btn btn-sm btn-danger"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteUser(user.id);
-                                }}
-                              >
-                                Hapus
-                              </button>
-                            </td>
+                    <div className="table-responsive">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Kelas</th>
+                            <th>Foto</th>
+                            <th>Aksi</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {users.map(user => (
+                            <tr 
+                              key={user.id} 
+                              className={`${selectedUser?.id === user.id ? 'active' : ''}`}
+                              onClick={() => handleUserClick(user)}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <td>{user.id}</td>
+                              <td>{user.name}</td>
+                              <td>{user.class}</td>
+                              <td>{user.embeddings ? user.embeddings.length : 0}</td>
+                              <td>
+                                <button 
+                                  className="btn btn-sm btn-danger"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteUser(user.id);
+                                  }}
+                                >
+                                  Hapus
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
             
-            <div className="col-md-8">
+            <div className={`col-12 ${isMobileDevice() ? '' : 'col-md-8'}`}>
               {selectedUser ? (
                 <div className="card">
                   <div className="card-header d-flex justify-content-between align-items-center">
@@ -496,7 +528,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Upload Photos Modal */}
+        {/* Upload Photos Modal yang diperbarui */}
         {showUploadModal && (
           <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
             <div className="modal-dialog modal-lg">
@@ -509,18 +541,18 @@ const AdminDashboard = () => {
                 </div>
                 <div className="modal-body">
                   <div className="d-flex justify-content-center mb-3">
-                    <div className="btn-group" role="group">
+                    <div className="btn-group w-100" role="group">
                       <button 
                         type="button" 
-                        className={`btn ${!useCamera ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`btn ${!useCamera ? 'btn-primary' : 'btn-secondary'} flex-grow-1`}
                         onClick={() => setUseCamera(false)}
                       >
                         Upload File
                       </button>
                       <button 
                         type="button" 
-                        className={`btn ${useCamera ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setUseCamera(true)}
+                        className={`btn ${useCamera ? 'btn-primary' : 'btn-secondary'} flex-grow-1`}
+                        onClick={toggleUploadMode}
                       >
                         Gunakan Kamera
                       </button>
@@ -528,20 +560,26 @@ const AdminDashboard = () => {
                   </div>
                   
                   {useCamera ? (
-                    /* Mode Kamera */
                     <div className="webcam-container">
                       <div className="row">
-                        <div className="col-md-6">
+                        <div className="col-12 col-md-6">
                           <div className="d-flex flex-column align-items-center">
-                            <Webcam
-                              audio={false}
-                              ref={webcamRef}
-                              screenshotFormat="image/jpeg"
-                              videoConstraints={videoConstraints}
-                              style={{ width: '100%', maxWidth: '400px', borderRadius: '8px' }}
-                            />
+                            <div className="webcam-wrapper" style={{ width: '100%', maxWidth: '400px' }}>
+                              <Webcam
+                                audio={false}
+                                ref={webcamRef}
+                                screenshotFormat="image/jpeg"
+                                videoConstraints={videoConstraints}
+                                style={{ 
+                                  width: '100%', 
+                                  borderRadius: '8px',
+                                  transform: isMobileDevice() ? 'scaleX(-1)' : 'none'
+                                }}
+                                onUserMediaError={handleCameraError}
+                              />
+                            </div>
                             <button
-                              className="btn btn-primary mt-2"
+                              className="btn btn-primary mt-2 w-100"
                               onClick={captureImage}
                               disabled={capturedImages.length >= 5}
                             >
@@ -552,7 +590,7 @@ const AdminDashboard = () => {
                             )}
                           </div>
                         </div>
-                        <div className="col-md-6">
+                        <div className="col-12 col-md-6 mt-3 mt-md-0">
                           <h6>Foto yang diambil: {capturedImages.length}</h6>
                           <div className="captured-images">
                             {capturedImages.length > 0 ? (
@@ -562,7 +600,11 @@ const AdminDashboard = () => {
                                     <img 
                                       src={image} 
                                       alt={`Captured ${index}`} 
-                                      style={{ width: '100%', borderRadius: '4px' }} 
+                                      style={{ 
+                                        width: '100%', 
+                                        borderRadius: '4px',
+                                        transform: isMobileDevice() ? 'scaleX(-1)' : 'none'
+                                      }} 
                                     />
                                     <button 
                                       className="btn btn-sm btn-danger position-absolute"
@@ -582,17 +624,19 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   ) : (
-                    /* Mode Upload File */
                     <div className="form-group">
-                      <label htmlFor="photos">Pilih Foto Wajah (Maksimal 5 foto)</label>
+                      <label htmlFor="photos" className="d-block">
+                        Pilih Foto Wajah (Maksimal 5 foto)
+                      </label>
                       <input
                         type="file"
-                        className="form-control-file"
+                        className="form-control-file w-100"
                         id="photos"
                         ref={fileInputRef}
                         accept="image/*"
                         onChange={handleFileChange}
                         multiple
+                        capture="environment"
                       />
                       
                       {photosPreviews.length > 0 && (
@@ -600,11 +644,16 @@ const AdminDashboard = () => {
                           <p>Preview ({photosPreviews.length} foto):</p>
                           <div className="row">
                             {photosPreviews.map((preview, index) => (
-                              <div key={index} className="col-md-4 mb-2">
+                              <div key={index} className="col-6 col-md-4 mb-2">
                                 <img 
                                   src={preview} 
                                   alt={`Preview ${index+1}`} 
-                                  style={{ width: '100%', maxHeight: '150px', objectFit: 'cover', borderRadius: '4px' }} 
+                                  style={{ 
+                                    width: '100%', 
+                                    height: '150px', 
+                                    objectFit: 'cover', 
+                                    borderRadius: '4px' 
+                                  }} 
                                 />
                               </div>
                             ))}
@@ -617,14 +666,14 @@ const AdminDashboard = () => {
                 <div className="modal-footer">
                   <button 
                     type="button" 
-                    className="btn btn-secondary" 
+                    className="btn btn-secondary flex-grow-1" 
                     onClick={closeUploadDialog}
                   >
                     Batal
                   </button>
                   <button 
                     type="button" 
-                    className="btn btn-primary"
+                    className="btn btn-primary flex-grow-1"
                     onClick={handleUploadPhotos}
                     disabled={
                       uploadLoading || 
