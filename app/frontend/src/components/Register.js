@@ -3,17 +3,75 @@ import Webcam from 'react-webcam';
 import axios from 'axios';
 import * as faceapi from 'face-api.js';
 import * as tf from '@tensorflow/tfjs';
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [tingkat, setTingkat] = useState('');
+  const [jurusan, setJurusan] = useState('');
+  const [rombel, setRombel] = useState('');
   const [capturedImages, setCapturedImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [detectionInterval, setDetectionInterval] = useState(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const navigate = useNavigate();
+
+  // Data untuk cascading dropdown
+  const kelasData = {
+    "X": {
+      "TKJ": ["A", "B", "C", "D", "E"],
+      "TITL": ["A", "B", "C", "D", "E"],
+      "PH": ["A", "B", "C", "D", "E"],
+      "TPM": ["A", "B", "C", "D", "E"],
+      "TSM": ["A", "B", "C", "D", "E"],
+      "TKR": ["A", "B", "C", "D", "E"],
+      "DKV": ["A", "B", "C", "D", "E"],
+      "DPIB": ["A", "B", "C", "D", "E"]
+    },
+    "XI": {
+      "TKJ": ["A", "B", "C", "D", "E"],
+      "TITL": ["A", "B", "C", "D", "E"],
+      "PH": ["A", "B", "C", "D", "E"],
+      "TPM": ["A", "B", "C", "D", "E"],
+      "TSM": ["A", "B", "C", "D", "E"],
+      "TKR": ["A", "B", "C", "D", "E"],
+      "DKV": ["A", "B", "C", "D", "E"],
+      "DPIB": ["A", "B", "C", "D", "E"]
+    },
+    "XII": {
+      "TKJ": ["A", "B", "C", "D", "E"],
+      "TITL": ["A", "B", "C", "D", "E"],
+      "PH": ["A", "B", "C", "D", "E"],
+      "TPM": ["A", "B", "C", "D", "E"],
+      "TSM": ["A", "B", "C", "D", "E"],
+      "TKR": ["A", "B", "C", "D", "E"],
+      "DKV": ["A", "B", "C", "D", "E"],
+      "DPIB": ["A", "B", "C", "D", "E"]
+    }
+  };
+
+  // Reset dropdown yang lebih rendah saat dropdown yang lebih tinggi berubah
+  useEffect(() => {
+    setJurusan('');
+    setRombel('');
+  }, [tingkat]);
+
+  useEffect(() => {
+    setRombel('');
+  }, [jurusan]);
+
+  // Mendapatkan nilai kelas lengkap untuk dikirim ke server
+  const getFullKelas = () => {
+    if (tingkat && jurusan && rombel) {
+      return `${tingkat} ${jurusan} ${rombel}`;
+    }
+    return '';
+  };
 
   // Batasi webcam ke resolusi rendah untuk performa
   const videoConstraints = {
@@ -111,40 +169,51 @@ const Register = () => {
     setMessage({ text: 'Gambar direset', type: 'info' });
   };
 
-  // Handle form submission
+  // Mengirimkan data ke server
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (capturedImages.length < 3) {
-      setMessage({ text: 'Silakan ambil setidaknya 3 gambar wajah', type: 'danger' });
+    if (!capturedImage) {
+      setMessage({ text: 'Silakan ambil foto terlebih dahulu', type: 'danger' });
       return;
     }
-    
+
+    const fullKelas = getFullKelas();
+    if (!fullKelas) {
+      setMessage({ text: 'Silakan pilih kelas dengan lengkap', type: 'danger' });
+      return;
+    }
+
     try {
       setIsLoading(true);
-      setMessage({ text: 'Mendaftarkan pengguna...', type: 'info' });
+      setMessage({ text: 'Sedang mendaftarkan...', type: 'info' });
       
-      // Konversi base64 images ke Blob untuk upload
+      // Konversi base64 ke blob
+      const response = await fetch(capturedImage);
+      const blob = await response.blob();
+      
+      // Buat FormData untuk upload
       const formData = new FormData();
       formData.append('name', name);
-      formData.append('email', email);
+      formData.append('email', fullKelas); // Tetap gunakan field 'email' di backend untuk kompatibilitas
+      formData.append('photo', blob, 'captured_image.jpg');
       
-      capturedImages.forEach((image, index) => {
-        const blob = dataURItoBlob(image);
-        formData.append('photos', blob, `face-${index}.jpg`);
-      });
-      
-      const response = await axios.post('/api/register', formData, {
+      const serverResponse = await axios.post('/api/register', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      if (response.data.status === 'success') {
-        setMessage({ text: response.data.message, type: 'success' });
+      if (serverResponse.data.status === 'success') {
+        setMessage({ text: serverResponse.data.message, type: 'success' });
+        // Reset form
         setName('');
-        setEmail('');
-        setCapturedImages([]);
+        setTingkat('');
+        setJurusan('');
+        setRombel('');
+        setCapturedImage(null);
+        // Redirect ke home setelah sukses
+        setTimeout(() => navigate('/'), 2000);
       } else {
-        setMessage({ text: response.data.message || 'Terjadi kesalahan', type: 'danger' });
+        setMessage({ text: serverResponse.data.message || 'Terjadi kesalahan', type: 'danger' });
       }
     } catch (error) {
       console.error('Error registering user:', error);
@@ -155,20 +224,6 @@ const Register = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Konversi data URI ke Blob
-  const dataURItoBlob = (dataURI) => {
-    const byteString = atob(dataURI.split(',')[1]);
-    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    
-    return new Blob([ab], { type: mimeString });
   };
 
   return (
@@ -189,22 +244,73 @@ const Register = () => {
               type="text"
               className="form-control"
               id="name"
+              placeholder="Masukkan nama lengkap"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
           
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              className="form-control"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          <div className="form-row">
+            <div className="form-group col-md-4">
+              <label htmlFor="tingkat">Tingkat</label>
+              <select
+                className="form-control"
+                id="tingkat"
+                value={tingkat}
+                onChange={(e) => setTingkat(e.target.value)}
+                required
+              >
+                <option value="">-- Pilih Tingkat --</option>
+                {Object.keys(kelasData).map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="form-group col-md-4">
+              <label htmlFor="jurusan">Jurusan</label>
+              <select
+                className="form-control"
+                id="jurusan"
+                value={jurusan}
+                onChange={(e) => setJurusan(e.target.value)}
+                required
+                disabled={!tingkat}
+              >
+                <option value="">-- Pilih Jurusan --</option>
+                {tingkat && 
+                  Object.keys(kelasData[tingkat]).map((jur) => (
+                    <option key={jur} value={jur}>
+                      {jur}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+            
+            <div className="form-group col-md-4">
+              <label htmlFor="rombel">Kelas</label>
+              <select
+                className="form-control"
+                id="rombel"
+                value={rombel}
+                onChange={(e) => setRombel(e.target.value)}
+                required
+                disabled={!jurusan}
+              >
+                <option value="">-- Pilih Kelas --</option>
+                {tingkat && jurusan && 
+                  kelasData[tingkat][jurusan].map((kls) => (
+                    <option key={kls} value={kls}>
+                      {kls}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
           </div>
           
           <div className="form-group">
@@ -243,7 +349,7 @@ const Register = () => {
           <button
             type="submit"
             className="btn btn-success"
-            disabled={isLoading || !isModelLoaded || capturedImages.length < 3}
+            disabled={isLoading || !isModelLoaded || capturedImages.length < 3 || !tingkat || !jurusan || !rombel}
           >
             {isLoading ? 'Mendaftarkan...' : 'Daftar'}
           </button>

@@ -9,6 +9,8 @@ import Register from './components/Register';
 import Attendance from './components/Attendance';
 import AttendanceHistory from './components/AttendanceHistory';
 import ManualUpload from './components/ManualUpload';
+import AdminLogin from './components/AdminLogin';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
             <Route path="/manual-upload" element={<ManualUpload />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/history" element={<AttendanceHistory />} />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Routes>
         </div>
       </div>

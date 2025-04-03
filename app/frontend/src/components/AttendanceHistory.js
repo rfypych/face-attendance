@@ -52,7 +52,7 @@ const AttendanceHistory = () => {
                   <tr>
                     <th>No.</th>
                     <th>Nama</th>
-                    <th>Email</th>
+                    <th>Kelas</th>
                     <th>Waktu Absensi</th>
                   </tr>
                 </thead>
@@ -61,7 +61,7 @@ const AttendanceHistory = () => {
                     <tr key={item.id}>
                       <td>{index + 1}</td>
                       <td>{item.name}</td>
-                      <td>{item.email}</td>
+                      <td>{item.class}</td>
                       <td>{formatDate(item.timestamp)}</td>
                     </tr>
                   ))}
