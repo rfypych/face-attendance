@@ -7,8 +7,7 @@
 
 Sistem absensi modern menggunakan deteksi dan pengenalan wajah, dirancang khusus untuk **berjalan efisien pada perangkat tanpa GPU (CPU-Optimized)**.
 
-![Placeholder Screenshot/GIF Aplikasi](https://via.placeholder.com/600x300.png?text=Screenshot+Aplikasi+Absensi)
-*(Ganti baris di atas dengan screenshot atau GIF demo aplikasi Anda. Anda bisa unggah gambar ke GitHub issue atau tempat lain dan gunakan linknya)*
+![Placeholder Screenshot/GIF Aplikasi](https://github.com/rfypych/face-attendance/blob/main/diagram2.png)
 
 ## ✨ Fitur Utama
 
@@ -65,11 +64,10 @@ face-attendance/
 
 1.  **Clone Repository:**
     ```bash
-    git clone https://github.com/yourusername/face-attendance.git
+    git clone https://github.com/rfypych/face-attendance.git
     cd face-attendance
     ```
-    *(Ganti `yourusername` dengan username GitHub Anda atau URL repository Anda)*
-
+   
 2.  **Setup Backend (Python):**
     ```bash
     # (Opsional tapi direkomendasikan) Buat & aktifkan virtual environment
@@ -127,10 +125,6 @@ Kontribusi sangat diterima! Jika Anda ingin berkontribusi, silakan:
 4.  Push ke branch (`git push origin fitur/NamaFitur`).
 5.  Buat Pull Request baru.
 
-## 📄 Lisensi
-
-Proyek ini tidak memiliki file lisensi yang spesifik. Pertimbangkan untuk menambahkan file `LICENSE` (misalnya MIT, Apache 2.0) untuk menjelaskan bagaimana orang lain dapat menggunakan kode Anda.
-
 ---
 
-*Dibuat dengan ❤️ untuk efisiensi CPU!* 
+*Dibuat dengan 🧠 oleh rfypych!* 
