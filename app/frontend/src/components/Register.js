@@ -82,6 +82,9 @@ const Register = () => {
 
   // Load model pendeteksi wajah dari face-api.js
   useEffect(() => {
+    let animationFrameId;
+    let isMounted = true;
+
     const loadModels = async () => {
       try {
         // Coba gunakan backend CPU jika WASM gagal
@@ -100,45 +103,68 @@ const Register = () => {
         // Load model kecil untuk penggunaan di browser
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         
+        if (!isMounted) return;
         setIsModelLoaded(true);
         setMessage({ text: 'Model dimuat. Siap untuk pendaftaran.', type: 'success' });
         
-        // Mulai interval deteksi wajah setelah model dimuat
-        const interval = setInterval(async () => {
-          if (webcamRef.current && webcamRef.current.video.readyState === 4) {
+        // Mulai loop deteksi wajah setelah model dimuat
+        const detectFaces = async () => {
+          if (isMounted && webcamRef.current && webcamRef.current.video.readyState === 4) {
             const video = webcamRef.current.video;
             
-            // Deteksi wajah
-            const detections = await faceapi.detectAllFaces(
-              video, 
-              new faceapi.TinyFaceDetectorOptions()
-            );
-            
-            // Gambar hasil deteksi ke canvas
-            if (canvasRef.current && detections.length > 0) {
-              const canvas = canvasRef.current;
-              const context = canvas.getContext('2d');
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
+            try {
+              // Deteksi wajah
+              const detections = await faceapi.detectAllFaces(
+                video, 
+                new faceapi.TinyFaceDetectorOptions()
+              );
               
-              // Clear canvas
-              context.clearRect(0, 0, canvas.width, canvas.height);
-              
-              // Gambar kotak deteksi
-              detections.forEach(detection => {
-                const box = detection.box;
-                context.strokeStyle = '#00ff00';
-                context.lineWidth = 3;
-                context.strokeRect(box.x, box.y, box.width, box.height);
-              });
+              // Gambar hasil deteksi ke canvas
+              if (canvasRef.current && detections.length > 0) {
+                const canvas = canvasRef.current;
+                const context = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                // Clear canvas
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Gambar kotak deteksi
+                detections.forEach(detection => {
+                  const box = detection.box;
+                  context.strokeStyle = '#00ff00';
+                  context.lineWidth = 3;
+                  context.strokeRect(box.x, box.y, box.width, box.height);
+                });
+              } else if (canvasRef.current) {
+                // Clear canvas jika tidak ada deteksi
+                const canvas = canvasRef.current;
+                const context = canvas.getContext('2d');
+                if (canvas.width > 0 && canvas.height > 0) {
+                  context.clearRect(0, 0, canvas.width, canvas.height);
+                }
+              }
+            } catch (error) {
+              console.error("Error saat deteksi wajah:", error);
+              // Berhenti mendeteksi jika terjadi error WebGL yang persisten?
+              // Atau tampilkan pesan error ke pengguna?
+              // Untuk saat ini, hanya log error
+              setMessage({ text: 'Terjadi error saat deteksi wajah.', type: 'warning' });
             }
           }
-        }, 100);
+          // Jadwalkan frame berikutnya jika komponen masih terpasang
+          if (isMounted) {
+            animationFrameId = requestAnimationFrame(detectFaces);
+          }
+        };
         
-        setDetectionInterval(interval);
+        animationFrameId = requestAnimationFrame(detectFaces);
+
       } catch (error) {
         console.error('Error saat memuat model:', error);
-        setMessage({ text: 'Gagal memuat model. Silakan refresh halaman.', type: 'danger' });
+        if (isMounted) {
+          setMessage({ text: 'Gagal memuat model. Silakan refresh halaman.', type: 'danger' });
+        }
       }
     };
     
@@ -146,11 +172,13 @@ const Register = () => {
     
     // Cleanup pada unmount
     return () => {
-      if (detectionInterval) {
-        clearInterval(detectionInterval);
+      isMounted = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [detectionInterval, webcamRef, canvasRef]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webcamRef, canvasRef]); // Hapus detectionInterval dari dependencies
 
   // Tangkap gambar dari webcam
   const captureImage = useCallback(() => {
@@ -173,8 +201,9 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!capturedImage) {
-      setMessage({ text: 'Silakan ambil foto terlebih dahulu', type: 'danger' });
+    // Perbaikan: Periksa capturedImages.length bukan capturedImage
+    if (capturedImages.length === 0) { 
+      setMessage({ text: 'Silakan ambil setidaknya satu foto terlebih dahulu', type: 'danger' });
       return;
     }
 
@@ -188,39 +217,46 @@ const Register = () => {
       setIsLoading(true);
       setMessage({ text: 'Sedang mendaftarkan...', type: 'info' });
       
-      // Konversi base64 ke blob
-      const response = await fetch(capturedImage);
-      const blob = await response.blob();
-      
       // Buat FormData untuk upload
       const formData = new FormData();
       formData.append('name', name);
       formData.append('email', fullKelas); // Tetap gunakan field 'email' di backend untuk kompatibilitas
-      formData.append('photo', blob, 'captured_image.jpg');
       
-      const serverResponse = await axios.post('/api/register', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      // Konversi base64 ke blob dan tambahkan ke FormData
+      for (let i = 0; i < capturedImages.length; i++) {
+        const imageSrc = capturedImages[i];
+        const response = await fetch(imageSrc);
+        const blob = await response.blob();
+        formData.append('photos', blob, `captured_image_${i + 1}.jpg`);
+      }
+      
+      // Kirim data ke API
+      const result = await axios.post('/api/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
       
-      if (serverResponse.data.status === 'success') {
-        setMessage({ text: serverResponse.data.message, type: 'success' });
-        // Reset form
-        setName('');
-        setTingkat('');
-        setJurusan('');
-        setRombel('');
-        setCapturedImage(null);
-        // Redirect ke home setelah sukses
-        setTimeout(() => navigate('/'), 2000);
-      } else {
-        setMessage({ text: serverResponse.data.message || 'Terjadi kesalahan', type: 'danger' });
-      }
+      setMessage({ text: result.data.message, type: 'success' });
+      
+      // Reset form setelah berhasil
+      setName('');
+      setTingkat('');
+      setJurusan('');
+      setRombel('');
+      setCapturedImages([]);
+      
+      // Navigasi ke halaman login atau halaman sukses setelah beberapa saat
+      setTimeout(() => {
+        navigate('/login'); // Asumsi ada halaman login
+      }, 2000);
+
     } catch (error) {
-      console.error('Error registering user:', error);
-      const errorMessage = error.response?.data?.detail || 
-                           error.response?.data?.message || 
-                           'Gagal mendaftarkan pengguna. Silakan coba lagi.';
-      setMessage({ text: errorMessage, type: 'danger' });
+      console.error('Error saat registrasi:', error);
+      setMessage({
+        text: error.response?.data?.message || 'Gagal mendaftar. Silakan coba lagi.',
+        type: 'danger'
+      });
     } finally {
       setIsLoading(false);
     }
