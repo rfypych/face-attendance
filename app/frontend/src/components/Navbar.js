@@ -13,6 +13,9 @@ const Navbar = () => {
           <Link to="/register" className="nav-link">Daftar</Link>
         </li>
         <li className="nav-item">
+          <Link to="/manual-upload" className="nav-link">Upload Foto</Link>
+        </li>
+        <li className="nav-item">
           <Link to="/attendance" className="nav-link">Absensi</Link>
         </li>
         <li className="nav-item">

@@ -8,6 +8,7 @@ import Home from './components/Home';
 import Register from './components/Register';
 import Attendance from './components/Attendance';
 import AttendanceHistory from './components/AttendanceHistory';
+import ManualUpload from './components/ManualUpload';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/manual-upload" element={<ManualUpload />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/history" element={<AttendanceHistory />} />
           </Routes>

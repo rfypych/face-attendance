@@ -142,4 +142,59 @@ async def recognize_face(
 @router.get("/attendance/history")
 async def get_history():
     history = await get_attendance_history()
-    return {"status": "success", "data": history} 
+    return {"status": "success", "data": history}
+
+@router.post("/register/upload")
+async def register_user_upload(
+    name: str = Form(...),
+    email: str = Form(...),
+    photo: UploadFile = File(...)
+):
+    """
+    Endpoint untuk mendaftarkan user dengan upload foto wajah secara manual
+    """
+    # Cek apakah email sudah terdaftar
+    user_exists = await check_user_exists_by_email(email)
+    if user_exists:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "Email sudah terdaftar"}
+        )
+    
+    # Baca foto yang diupload
+    contents = await photo.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Deteksi wajah
+    faces, _ = detect_faces(img)
+    
+    if not faces:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "Tidak ada wajah terdeteksi di foto yang diunggah"}
+        )
+    
+    # Ambil wajah pertama
+    face_img = faces[0]
+    
+    # Ekstrak embedding
+    embedding = get_embedding(face_img)
+    
+    if embedding is None:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "Gagal mengekstrak fitur wajah"}
+        )
+    
+    # Tambahkan user ke database
+    user_id = await add_user(name, email)
+    
+    # Simpan embedding ke database
+    await add_face_embedding(user_id, embedding)
+    
+    # Reset cache karena database berubah
+    global last_cache_update
+    last_cache_update = 0
+    
+    return {"status": "success", "user_id": user_id, "message": f"User {name} berhasil terdaftar menggunakan foto upload"} 
