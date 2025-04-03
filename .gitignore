@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -16,23 +15,32 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Node.js
 node_modules/
+*/node_modules/
+**/node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
-package-lock.json
-.cache/
-**/node_modules/.cache/
 
-# Virtual Environment
-venv/
-ENV/
-env/
+# Cache files
+.cache/
+**/.cache/
+**/node_modules/.cache/
+**/*.pack
 
 # IDE
 .idea/
@@ -42,24 +50,28 @@ env/
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Application specific
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Media files
+# Media and data files
+*.mp4
+*.mov
+*.avi
 *.jpg
 *.jpeg
 *.png
 *.gif
-*.mp4
-*.avi
-*.mov
+/data/
+/media/
+/datasets/
 
-# Data
-data/
-datasets/
+# Application specific
+app/frontend/node_modules/
+app/frontend/node_modules/**/*
+app/frontend/node_modules/.cache/
+app/frontend/node_modules/.cache/default-development/
+app/frontend/node_modules/.cache/default-development/*.pack
