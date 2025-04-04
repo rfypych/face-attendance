@@ -164,6 +164,7 @@ const Attendance = () => {
             screenshotFormat="image/jpeg"
             videoConstraints={videoConstraints}
             style={{ width: '100%' }}
+            mirrored={false}
           />
         </div>
         

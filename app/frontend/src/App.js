@@ -11,6 +11,7 @@ import AttendanceHistory from './components/AttendanceHistory';
 import ManualUpload from './components/ManualUpload';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
+import About from './components/About';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/history" element={<AttendanceHistory />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/about" element={<About />} />
           </Routes>
         </div>
       </div>

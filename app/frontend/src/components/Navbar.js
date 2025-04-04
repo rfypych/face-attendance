@@ -56,6 +56,12 @@ const Navbar = () => {
             Admin
           </Link>
         </li>
+        <li className="nav-item">
+          <Link to="/about" className="nav-link" onClick={() => setIsMenuOpen(false)}>
+            <span role="img" aria-label="about" style={{ marginRight: '5px' }}>ℹ️</span>
+            Tentang
+          </Link>
+        </li>
       </ul>
     </nav>
   );
