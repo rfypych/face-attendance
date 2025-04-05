@@ -1,6 +1,17 @@
 /* App.css - Styling dasar dengan CSS Vanilla */
 
 :root {
+  --golden-ratio: 1.618;
+  --font-size-base: 1rem;  /* 16px */
+  --font-size-lg: calc(var(--font-size-base) * var(--golden-ratio)); /* ~26px */
+  --font-size-sm: calc(var(--font-size-base) / var(--golden-ratio)); /* ~10px */
+  --font-size-xl: calc(var(--font-size-lg) * var(--golden-ratio)); /* ~42px */
+  --space-xs: 0.5rem; /* 8px */
+  --space-sm: calc(var(--space-xs) * var(--golden-ratio)); /* ~13px */
+  --space-md: calc(var(--space-sm) * var(--golden-ratio)); /* ~21px */
+  --space-lg: calc(var(--space-md) * var(--golden-ratio)); /* ~34px */
+  --space-xl: calc(var(--space-lg) * var(--golden-ratio)); /* ~55px */
+  
   --primary-color: #007bff;
   --primary-dark: #2563eb;
   --primary-light: #60a5fa;
@@ -73,12 +84,20 @@ body {
   background-color: var(--background-color);
   line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
+  padding-top: calc(var(--space-lg) * 2); /* Tambahkan padding-top setinggi navbar */
 }
 
 .container {
+  width: 100%;
   max-width: 1140px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0 var(--space-md);
+}
+
+/* Style untuk container utama konten */
+.main-content {
+  padding-top: var(--space-md);
+  min-height: calc(100vh - calc(var(--space-lg) * 2)); /* Tinggi viewport dikurangi tinggi navbar */
 }
 
 /* Navbar */
@@ -86,30 +105,45 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 1rem;
+  padding: var(--space-sm) var(--space-md);
   background-color: var(--navbar-bg);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: sticky;
+  position: fixed; /* Ubah dari sticky ke fixed untuk konsistensi di mobile */
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 1000;
   border-bottom: 1px solid var(--card-border);
   transition: background-color 0.3s ease, border-color 0.3s ease;
+  height: calc(var(--space-lg) * 2); /* Golden Ratio-based height */
 }
 
 .navbar-brand {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
   color: var(--text-color);
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-xs);
+  letter-spacing: -0.01em; /* Slight letter spacing improvement */
+}
+
+.navbar-container {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
 }
 
 .navbar-nav {
   display: flex;
   list-style: none;
-  gap: 1rem;
+  gap: var(--space-md); /* Golden Ratio-based spacing */
   padding: 0;
   margin: 0;
   align-items: center;
@@ -123,12 +157,14 @@ body {
   text-decoration: none;
   color: var(--navbar-text);
   font-weight: 500;
-  padding: 0.5rem 0;
+  padding: var(--space-xs) var(--space-sm);
   transition: color 0.2s ease;
   position: relative;
+  font-size: calc(var(--font-size-base) * 0.95);
+  letter-spacing: 0.02em; /* Improved readability */
 }
 
-.nav-link:hover {
+.nav-link:hover, .nav-link.active {
   color: var(--navbar-hover-text);
 }
 
@@ -143,7 +179,7 @@ body {
   transition: var(--transition);
 }
 
-.nav-link:hover::after {
+.nav-link:hover::after, .nav-link.active::after {
   width: 100%;
 }
 
@@ -162,25 +198,26 @@ body {
   background-color: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--border-radius);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: var(--space-md);
+  margin-bottom: var(--space-lg);
   box-shadow: 0 2px 5px var(--shadow-color);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 
 .card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-3px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .card-title {
-  font-size: 1.5rem;
+  font-size: var(--font-size-lg);
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-sm);
   color: var(--text-color);
   border-bottom: 2px solid var(--primary-light);
-  padding-bottom: 0.5rem;
+  padding-bottom: var(--space-xs);
   display: inline-block;
+  line-height: 1.3;
 }
 
 /* Buttons */
@@ -189,14 +226,16 @@ body {
   background: var(--primary-color);
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: var(--space-xs) var(--space-md);
   border-radius: var(--border-radius);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: var(--font-size-base);
   font-weight: 500;
   transition: var(--transition);
   text-decoration: none;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  line-height: var(--golden-ratio);
+  letter-spacing: 0.01em;
 }
 
 .btn:hover {
@@ -435,35 +474,44 @@ body.dark .admin-dashboard th {
 
 /* Hero section */
 .hero {
-  padding: 3rem 0;
+  padding: var(--space-xl) 0;
   text-align: center;
   background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
   color: white;
   border-radius: var(--border-radius);
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-xl);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding-top: var(--space-md);
 }
 
 .hero h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-sm);
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 80%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .hero p {
-  font-size: 1.2rem;
+  font-size: var(--font-size-lg);
   max-width: 800px;
-  margin: 0 auto 2rem;
+  margin: 0 auto var(--space-lg);
+  line-height: 1.5;
+  opacity: 0.9;
 }
 
 /* Feature cards */
 .features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(calc(300px * var(--golden-ratio) / 2), 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
 }
 
 .feature-card {
-  padding: 1.5rem;
+  padding: var(--space-md);
   background-color: var(--card-bg);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
@@ -472,6 +520,7 @@ body.dark .admin-dashboard th {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  height: 100%;
 }
 
 .feature-card:hover {
@@ -480,52 +529,53 @@ body.dark .admin-dashboard th {
 }
 
 .feature-icon {
-  font-size: 2.5rem;
+  font-size: calc(var(--font-size-xl) * 1.2);
   color: var(--primary-color);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-md);
 }
 
 .feature-title {
-  font-size: 1.25rem;
+  font-size: var(--font-size-lg);
   font-weight: 600;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-sm);
+  line-height: 1.3;
+}
+
+.feature-description {
+  font-size: var(--font-size-base);
+  color: var(--text-light);
+  line-height: 1.6;
+  flex-grow: 1;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+  :root {
+    /* Slightly adjust spacing for mobile */
+    --space-md: calc(var(--space-sm) * 1.4); 
+  }
+  
   .navbar {
-    padding: 1rem;
+    padding: var(--space-xs) var(--space-sm);
   }
   
-  .navbar-toggle {
-    display: block;
+  .navbar-brand {
+    font-size: calc(var(--font-size-lg) * 0.9);
+  }
+
+  .hero h1 {
+    font-size: calc(var(--font-size-xl) * 0.8);
+    max-width: 95%;
   }
   
-  .navbar-nav {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    background-color: var(--card-bg);
-    box-shadow: var(--box-shadow);
-    padding: 1rem;
-    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
-    transition: var(--transition);
-    pointer-events: none;
-  }
-  
-  .navbar-nav.active {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    pointer-events: all;
-  }
-  
-  .nav-item {
-    margin: 0.5rem 0;
+  .hero p {
+    font-size: calc(var(--font-size-lg) * 0.9);
+    max-width: 95%;
   }
   
   .features {
     grid-template-columns: 1fr;
+    gap: var(--space-md);
   }
 }
 
@@ -808,4 +858,632 @@ body.dark .modal-header, body.dark .modal-footer {
 
 body.dark .close {
   color: var(--text-color);
+}
+
+/* Styling untuk tema toggle dan nav container */
+.navbar .nav-content {
+  display: flex;
+  align-items: center;
+}
+
+.theme-toggle {
+  margin-left: var(--space-sm);
+}
+
+.theme-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  padding: var(--space-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: calc(var(--space-md) * 1.5);
+  height: calc(var(--space-md) * 1.5);
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--navbar-text);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  color: var(--navbar-hover-text);
+}
+
+/* Mobile Nav Styling With Golden Ratio */
+@media (max-width: 768px) {
+  body {
+    position: relative;
+    padding-top: calc(var(--space-lg) * 2); /* Tinggi navbar */
+  }
+  
+  .navbar {
+    z-index: 1001; /* Pastikan navbar selalu di atas */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--navbar-bg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .navbar-container {
+    padding: 0 var(--space-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+  }
+  
+  .navbar .nav-content {
+    display: none;
+  }
+  
+  .navbar .nav-content.show {
+    display: block;
+  }
+  
+  .navbar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    width: calc(var(--space-md) * 1.5);
+    height: calc(var(--space-md) * 1.5);
+    z-index: 1002; /* Pastikan tombol selalu bisa diklik */
+  }
+  
+  /* Fix mobile menu dengan fixed layar penuh */
+  .navbar-nav {
+    display: none;
+    position: fixed;
+    top: calc(var(--space-lg) * 2); /* Sesuai dengan tinggi navbar */
+    left: 0;
+    right: 0;
+    background-color: var(--card-bg);
+    padding: var(--space-md);
+    z-index: 1000;
+    border-bottom: 1px solid var(--card-border);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+  }
+  
+  .navbar-nav.visible {
+    display: block;
+    max-height: calc(100vh - calc(var(--space-lg) * 2));
+    overflow-y: auto; /* Tambahkan scroll jika menu terlalu panjang */
+  }
+  
+  /* Overlay untuk menu mobile */
+  .menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+  
+  .menu-overlay.active {
+    display: block;
+  }
+  
+  /* Pastikan menu tidak menutupi konten */
+  .main-content {
+    margin-top: 0;
+    padding-top: var(--space-md);
+    transition: margin-top 0.3s ease;
+    position: relative;
+    z-index: 1;
+  }
+  
+  body.menu-open .main-content {
+    margin-top: 0; /* Tidak perlu margin tambahan */
+  }
+  
+  /* Style untuk nav item */
+  .nav-item {
+    margin: var(--space-sm) 0;
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid rgba(var(--primary-color-rgb), 0.1);
+    text-align: center;
+    width: 100%;
+  }
+  
+  .nav-item:last-child {
+    border-bottom: none;
+  }
+  
+  .nav-link {
+    font-size: var(--font-size-base);
+    padding: var(--space-sm);
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s ease;
+    display: block;
+    width: 100%;
+  }
+  
+  .nav-link:hover,
+  .nav-link.active {
+    background-color: rgba(var(--primary-color-rgb),.1);
+    color: var(--primary-color);
+  }
+  
+  /* Theme Toggle Button */
+  .theme-toggle {
+    margin-top: var(--space-md);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--card-border);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Responsive styling untuk halaman spesifik */
+@media (max-width: 767px) {
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .hero-buttons .btn {
+    width: 100%;
+    max-width: 300px;
+    margin-right: 0 !important;
+    margin-bottom: var(--space-sm);
+    text-align: center;
+  }
+  
+  .about-section {
+    margin: var(--space-lg) 0;
+  }
+  
+  /* Tambahkan clearfix untuk mengatasi float pada mobile */
+  .clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+/* Homepage Golden Ratio Grid Layout for About Section */
+.about-section {
+  display: grid;
+  grid-template-columns: 38.2% 61.8%; /* Golden Ratio split */
+  gap: var(--space-lg);
+  margin: var(--space-xl) 0;
+  align-items: center;
+}
+
+.about-image {
+  width: 100%;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+}
+
+.about-content h2 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-md);
+  line-height: 1.2;
+  color: var(--text-color);
+}
+
+.about-content p {
+  font-size: var(--font-size-base);
+  margin-bottom: var(--space-md);
+  line-height: var(--golden-ratio);
+  color: var(--text-light);
+}
+
+@media (max-width: 768px) {
+  .about-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .about-image {
+    order: 1;
+  }
+  
+  .about-content {
+    order: 2;
+  }
+}
+
+/* Styling untuk beranda */
+.home-container {
+  margin-bottom: var(--space-xl);
+}
+
+.hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: center;
+  margin-top: var(--space-md);
+}
+
+/* Styling untuk steps/langkah-langkah panduan dengan Golden Ratio */
+.how-to-use {
+  margin-top: var(--space-xl);
+}
+
+.steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-sm);
+  border-radius: var(--border-radius);
+  background-color: rgba(var(--primary-color-rgb), 0.05);
+  transition: var(--transition);
+}
+
+.step-item:hover {
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+  transform: translateX(var(--space-xs));
+}
+
+.step-number {
+  background-color: var(--primary-color);
+  color: white;
+  width: calc(var(--space-md) * var(--golden-ratio));
+  height: calc(var(--space-md) * var(--golden-ratio));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+  flex-shrink: 0;
+  font-size: var(--font-size-base);
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content h4 {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: calc(var(--font-size-base) * 1.1);
+  color: var(--text-color);
+}
+
+.step-content p {
+  margin: 0;
+  color: var(--text-light);
+  line-height: var(--golden-ratio);
+}
+
+/* Responsive styling */
+@media (min-width: 768px) {
+  .steps-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+  
+  .step-item {
+    height: 100%;
+  }
+}
+
+/* Logo Styling */
+.navbar-logo {
+  margin-right: var(--space-xs);
+  color: var(--primary-color);
+  transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover .navbar-logo {
+  transform: scale(1.1);
+}
+
+/* Dark theme styling untuk logo */
+.dark-theme .navbar-logo {
+  color: var(--primary-light);
+}
+
+/* Animation CSS untuk scan line pada logo */
+@keyframes scanline {
+  0% {
+    transform: translateY(-10px);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(-10px);
+  }
+}
+
+.navbar-logo line {
+  animation: scanline 3s ease-in-out infinite;
+}
+
+/* Styling tambahan navbar-brand untuk layout logo */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Styling untuk Login dan Form */
+.login-container {
+  max-width: 500px;
+  margin: var(--space-lg) auto;
+}
+
+.form-group {
+  margin-bottom: var(--space-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.form-control {
+  width: 100%;
+  padding: var(--space-sm);
+  border: 1px solid var(--input-border);
+  border-radius: var(--border-radius);
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  font-size: var(--font-size-base);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
+  outline: none;
+}
+
+.form-control::placeholder {
+  color: var(--text-light);
+  opacity: 0.7;
+}
+
+.form-footer {
+  margin-top: var(--space-lg);
+  text-align: center;
+  color: var(--text-light);
+}
+
+.link-primary {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.link-primary:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.alert {
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+/* Responsive styling untuk form */
+@media (max-width: 576px) {
+  .login-container {
+    padding: 0 var(--space-sm);
+  }
+  
+  .form-control {
+    font-size: 16px; /* Mencegah zoom pada iOS */
+  }
+}
+
+/* Styling untuk tab pada login page */
+.login-tabs {
+  display: flex;
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.tab-button {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--secondary-color);
+  transition: all 0.3s ease;
+}
+
+.tab-button.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.tab-button:hover:not(.active) {
+  color: var(--primary-dark);
+  background-color: rgba(var(--primary-color-rgb), 0.05);
+}
+
+/* Face Login Container */
+.face-login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Face Register Container */
+.face-register-container {
+  max-width: 600px;
+  margin: var(--space-lg) auto;
+}
+
+.input-method-toggle {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.input-method-toggle .btn {
+  flex: 1;
+}
+
+/* Photo previews */
+.photo-previews {
+  margin-top: var(--space-md);
+}
+
+/* New system info card */
+.new-system-info {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  background-color: #f8f9ff;
+  border-left: 4px solid var(--primary-color);
+}
+
+.new-system-info .card-title {
+  color: var(--primary-dark);
+}
+
+.info-content {
+  margin-bottom: var(--space-md);
+}
+
+.info-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: space-between;
+}
+
+.info-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius);
+  flex: 1;
+  min-width: 150px;
+}
+
+.info-step .step-number {
+  background-color: var(--primary-color);
+  color: white;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* Dark mode support */
+body.dark .new-system-info {
+  background-color: #232333;
+  border-left-color: var(--primary-light);
+}
+
+body.dark .info-step {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+  .login-tabs {
+    flex-direction: column;
+    gap: var(--space-xs);
+    border-bottom: none;
+  }
+
+  .tab-button {
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin-bottom: var(--space-xs);
+  }
+
+  .tab-button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+
+  .info-steps {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .info-step {
+    min-width: auto;
+  }
+
+  .input-method-toggle {
+    flex-direction: column;
+  }
+
+  .webcam-container {
+    max-width: 100%;
+  }
 } 

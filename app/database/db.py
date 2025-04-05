@@ -235,4 +235,17 @@ async def delete_embedding(embedding_id):
             "DELETE FROM face_embeddings WHERE id = ?",
             (embedding_id,)
         )
-        await db.commit() 
+        await db.commit()
+
+async def get_user_by_class(kelas):
+    """Mendapatkan user berdasarkan kelas (disimpan sebagai email)"""
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM users WHERE email = ?", 
+            (kelas,)
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return None
+        return dict(row) 

@@ -2,6 +2,32 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Webcam from 'react-webcam';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -17,6 +43,9 @@ const AdminDashboard = () => {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [useCamera, setUseCamera] = useState(false);
   const [capturedImages, setCapturedImages] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'users'
   
   const fileInputRef = useRef(null);
   const webcamRef = useRef(null);
@@ -66,7 +95,87 @@ const AdminDashboard = () => {
 
     // Load data
     fetchUsers();
+    fetchStats();
   }, [navigate]);
+  
+  // Fetch stats data
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      
+      // Mengambil statistik
+      const response = await axios.get('/api/admin/stats', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+
+      if (response.data.status === 'success') {
+        setStats(response.data.data);
+      } else {
+        setMessage({ text: response.data.message || 'Gagal memuat statistik', type: 'danger' });
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setMessage({ 
+        text: error.response?.data?.detail || 'Gagal memuat statistik', 
+        type: 'danger' 
+      });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Prepare chart data for attendance
+  const prepareAttendanceChartData = () => {
+    if (!stats) return null;
+    
+    const days = Object.keys(stats.attendance_by_day).sort();
+    const counts = days.map(day => stats.attendance_by_day[day]);
+    
+    // Format dates to be more readable (e.g., "01 Jan" format)
+    const formattedDays = days.map(day => {
+      const date = new Date(day);
+      return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+    });
+    
+    return {
+      labels: formattedDays,
+      datasets: [
+        {
+          label: 'Jumlah Kehadiran',
+          data: counts,
+          fill: false,
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          tension: 0.4
+        }
+      ]
+    };
+  };
+  
+  // Prepare chart data for user statistics
+  const prepareUserChartData = () => {
+    if (!stats) return null;
+    
+    return {
+      labels: ['Dengan Foto Wajah', 'Tanpa Foto Wajah'],
+      datasets: [
+        {
+          data: [stats.users_with_face, stats.users_without_face],
+          backgroundColor: [
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(255, 206, 86, 0.6)'
+          ],
+          borderColor: [
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)'
+          ],
+          borderWidth: 1
+        }
+      ]
+    };
+  };
 
   const fetchUsers = async () => {
     try {
@@ -177,6 +286,7 @@ const AdminDashboard = () => {
           setMessage({ text: 'Pengguna berhasil dihapus', type: 'success' });
           // Refresh user data dan reset selected user
           fetchUsers();
+          fetchStats();
           setSelectedUser(null);
           setSelectedUserEmbeddings([]);
         } else {
@@ -254,13 +364,9 @@ const AdminDashboard = () => {
   // Fungsi untuk menutup dialog upload foto
   const closeUploadDialog = () => {
     setShowUploadModal(false);
-    setUploadedPhotos([]);
-    setPhotosPreviews([]);
-    setCapturedImages([]);
-    setUseCamera(false);
   };
 
-  // Konversi data URI ke Blob
+  // Fungsi untuk mengkonversi Data URL menjadi Blob
   const dataURItoBlob = (dataURI) => {
     const byteString = atob(dataURI.split(',')[1]);
     const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
@@ -276,77 +382,72 @@ const AdminDashboard = () => {
 
   // Fungsi untuk mengunggah foto
   const handleUploadPhotos = async () => {
-    if (!selectedUser) {
-      setMessage({ text: 'Tidak ada pengguna yang dipilih', type: 'danger' });
-      return;
-    }
-    
-    const hasPhotos = useCamera ? capturedImages.length > 0 : uploadedPhotos.length > 0;
-    
-    if (!hasPhotos) {
-      setMessage({ text: 'Silakan pilih minimal 1 foto wajah', type: 'danger' });
-      return;
-    }
-    
     try {
       setUploadLoading(true);
       setMessage({ text: 'Mengunggah foto...', type: 'info' });
       
-      // Buat FormData untuk upload
       const formData = new FormData();
       formData.append('user_id', selectedUser.id);
       
-      // Tambahkan semua foto ke formData
       if (useCamera) {
-        // Mengunggah gambar dari kamera
-        capturedImages.forEach((image, index) => {
-          const blob = dataURItoBlob(image);
+        // Konversi captured images ke File objects
+        capturedImages.forEach((imageSrc, index) => {
+          const blob = dataURItoBlob(imageSrc);
           formData.append('photos', blob, `webcam-${index}.jpg`);
         });
       } else {
-        // Mengunggah file yang dipilih
-        uploadedPhotos.forEach(photo => {
-          formData.append('photos', photo);
+        // Menggunakan file yang dipilih
+        uploadedPhotos.forEach(file => {
+          formData.append('photos', file);
         });
       }
       
       const response = await axios.post('/api/admin/users/upload-photos', formData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Content-Type': 'multipart/form-data'
         }
       });
       
       if (response.data.status === 'success') {
-        setMessage({ text: response.data.message, type: 'success' });
-        closeUploadDialog();
-        // Refresh data embeddings
+        setMessage({ 
+          text: response.data.message || 'Foto berhasil diunggah', 
+          type: 'success' 
+        });
+        
+        // Refresh data foto dan statistik
         await fetchUserEmbeddings(selectedUser.id);
-        // Refresh user list untuk memperbarui jumlah foto
-        await fetchUsers();
+        await fetchStats();
+        
+        // Tutup modal
+        closeUploadDialog();
       } else {
-        setMessage({ text: response.data.message || 'Terjadi kesalahan', type: 'danger' });
+        setMessage({ 
+          text: response.data.message || 'Terjadi kesalahan saat mengunggah foto', 
+          type: 'danger' 
+        });
       }
     } catch (error) {
       console.error('Error uploading photos:', error);
-      const errorMessage = error.response?.data?.detail || 
-                         error.response?.data?.message || 
-                         'Gagal mengunggah foto. Silakan coba lagi.';
-      setMessage({ text: errorMessage, type: 'danger' });
+      setMessage({ 
+        text: error.response?.data?.detail || error.response?.data?.message || 'Gagal mengunggah foto', 
+        type: 'danger' 
+      });
     } finally {
       setUploadLoading(false);
     }
   };
 
-  // Fungsi untuk mengubah mode upload yang diperbarui
+  // Fungsi untuk beralih antara mode upload file dan kamera
   const toggleUploadMode = async () => {
     if (!useCamera) {
-      // Jika beralih ke mode kamera, minta izin terlebih dahulu
+      // Beralih ke mode kamera
       const hasPermission = await requestCameraPermission();
-      if (!hasPermission) return;
+      if (hasPermission) {
+        setUseCamera(true);
+      }
     }
-    setUseCamera(!useCamera);
-    // Reset data dari mode sebelumnya
+    
     if (useCamera) {
       setCapturedImages([]);
     } else {
@@ -374,118 +475,244 @@ const AdminDashboard = () => {
           </div>
         )}
         
-        {loading ? (
-          <div className="text-center p-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="sr-only">Loading...</span>
-            </div>
-            <p className="mt-2">Memuat data...</p>
-          </div>
-        ) : (
-          <div className="row">
-            <div className={`col-12 ${isMobileDevice() ? 'mb-4' : 'col-md-4'}`}>
-              <div className="card">
-                <div className="card-header">
-                  <h4>Daftar Pengguna</h4>
+        {/* Tabs for navigation */}
+        <div className="card-body p-0">
+          <ul className="nav nav-tabs">
+            <li className="nav-item">
+              <button 
+                className={`nav-link ${activeTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                Dashboard
+              </button>
+            </li>
+            <li className="nav-item">
+              <button 
+                className={`nav-link ${activeTab === 'users' ? 'active' : ''}`}
+                onClick={() => setActiveTab('users')}
+              >
+                Pengguna
+              </button>
+            </li>
+          </ul>
+        </div>
+        
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <div className="card-body">
+            {statsLoading ? (
+              <div className="text-center p-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
                 </div>
-                <div className="card-body">
-                  {users.length === 0 ? (
-                    <p>Tidak ada pengguna terdaftar</p>
-                  ) : (
-                    <div className="table-responsive">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>Kelas</th>
-                            <th>Foto</th>
-                            <th>Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {users.map(user => (
-                            <tr 
-                              key={user.id} 
-                              className={`${selectedUser?.id === user.id ? 'active' : ''}`}
-                              onClick={() => handleUserClick(user)}
-                              style={{ cursor: 'pointer' }}
-                            >
-                              <td>{user.id}</td>
-                              <td>{user.name}</td>
-                              <td>{user.class}</td>
-                              <td>{user.embeddings ? user.embeddings.length : 0}</td>
-                              <td>
-                                <button 
-                                  className="btn btn-sm btn-danger"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteUser(user.id);
-                                  }}
+                <p className="mt-2">Memuat statistik...</p>
+              </div>
+            ) : stats ? (
+              <div className="dashboard-stats">
+                <div className="row mb-4">
+                  <div className="col-md-3 col-sm-6 mb-3">
+                    <div className="card bg-primary text-white">
+                      <div className="card-body">
+                        <h5 className="card-title">Total Pengguna</h5>
+                        <h2 className="display-4">{stats.total_users}</h2>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-3 col-sm-6 mb-3">
+                    <div className="card bg-success text-white">
+                      <div className="card-body">
+                        <h5 className="card-title">Dengan Foto</h5>
+                        <h2 className="display-4">{stats.users_with_face}</h2>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-3 col-sm-6 mb-3">
+                    <div className="card bg-warning text-white">
+                      <div className="card-body">
+                        <h5 className="card-title">Tanpa Foto</h5>
+                        <h2 className="display-4">{stats.users_without_face}</h2>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-3 col-sm-6 mb-3">
+                    <div className="card bg-info text-white">
+                      <div className="card-body">
+                        <h5 className="card-title">Total Absensi</h5>
+                        <h2 className="display-4">{stats.total_attendance}</h2>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="row">
+                  <div className="col-md-8 mb-4">
+                    <div className="card">
+                      <div className="card-header">
+                        <h5>Absensi 7 Hari Terakhir</h5>
+                      </div>
+                      <div className="card-body">
+                        <Line data={prepareAttendanceChartData()} options={{
+                          responsive: true,
+                          plugins: {
+                            legend: {
+                              position: 'top',
+                            },
+                            title: {
+                              display: false
+                            }
+                          }
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-4 mb-4">
+                    <div className="card">
+                      <div className="card-header">
+                        <h5>Distribusi Pengguna</h5>
+                      </div>
+                      <div className="card-body">
+                        <Doughnut data={prepareUserChartData()} options={{
+                          responsive: true,
+                          plugins: {
+                            legend: {
+                              position: 'bottom',
+                            }
+                          }
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-right text-muted">
+                  <small>Terakhir diperbarui: {new Date(stats.last_updated).toLocaleString()}</small>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center p-5">
+                <p>Tidak ada data statistik tersedia</p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="card-body">
+            {loading ? (
+              <div className="text-center p-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="sr-only">Loading...</span>
+                </div>
+                <p className="mt-2">Memuat data...</p>
+              </div>
+            ) : (
+              <div className="row">
+                <div className={`col-12 ${isMobileDevice() ? 'mb-4' : 'col-md-4'}`}>
+                  <div className="card">
+                    <div className="card-header">
+                      <h4>Daftar Pengguna</h4>
+                    </div>
+                    <div className="card-body">
+                      {users.length === 0 ? (
+                        <p>Tidak ada pengguna terdaftar</p>
+                      ) : (
+                        <div className="table-responsive">
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>ID</th>
+                                <th>Nama</th>
+                                <th>Kelas</th>
+                                <th>Foto</th>
+                                <th>Aksi</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {users.map(user => (
+                                <tr 
+                                  key={user.id} 
+                                  className={`${selectedUser?.id === user.id ? 'active' : ''}`}
+                                  onClick={() => handleUserClick(user)}
+                                  style={{ cursor: 'pointer' }}
                                 >
-                                  Hapus
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                                  <td>{user.id}</td>
+                                  <td>{user.name}</td>
+                                  <td>{user.class}</td>
+                                  <td>{user.embeddings ? user.embeddings.length : 0}</td>
+                                  <td>
+                                    <button 
+                                      className="btn btn-sm btn-danger"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteUser(user.id);
+                                      }}
+                                    >
+                                      Hapus
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className={`col-12 ${isMobileDevice() ? '' : 'col-md-8'}`}>
+                  {selectedUser ? (
+                    <div className="card">
+                      <div className="card-header d-flex justify-content-between align-items-center">
+                        <h4>Data Foto {selectedUser.name}</h4>
+                        <button 
+                          className="btn btn-primary"
+                          onClick={showUploadDialog}
+                        >
+                          Tambah Foto
+                        </button>
+                      </div>
+                      <div className="card-body">
+                        {selectedUserEmbeddings.length === 0 ? (
+                          <p>Tidak ada foto tersimpan</p>
+                        ) : (
+                          <div className="row">
+                            {selectedUserEmbeddings.map((embedding, index) => (
+                              <div key={embedding.id} className="col-md-4 mb-3">
+                                <div className="card">
+                                  <div className="card-header">
+                                    <h6>Foto {index + 1}</h6>
+                                  </div>
+                                  <div className="card-body">
+                                    <p>ID: {embedding.id}</p>
+                                    <p>Tanggal: {new Date(embedding.created_at).toLocaleString()}</p>
+                                  </div>
+                                  <div className="card-footer">
+                                    <button 
+                                      className="btn btn-sm btn-danger"
+                                      onClick={() => handleDeleteEmbedding(embedding.id)}
+                                    >
+                                      Hapus Foto
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="card">
+                      <div className="card-body text-center">
+                        <p>Pilih pengguna untuk melihat detail foto</p>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-            
-            <div className={`col-12 ${isMobileDevice() ? '' : 'col-md-8'}`}>
-              {selectedUser ? (
-                <div className="card">
-                  <div className="card-header d-flex justify-content-between align-items-center">
-                    <h4>Data Foto {selectedUser.name}</h4>
-                    <button 
-                      className="btn btn-primary"
-                      onClick={showUploadDialog}
-                    >
-                      Tambah Foto
-                    </button>
-                  </div>
-                  <div className="card-body">
-                    {selectedUserEmbeddings.length === 0 ? (
-                      <p>Tidak ada foto tersimpan</p>
-                    ) : (
-                      <div className="row">
-                        {selectedUserEmbeddings.map((embedding, index) => (
-                          <div key={embedding.id} className="col-md-4 mb-3">
-                            <div className="card">
-                              <div className="card-header">
-                                <h6>Foto {index + 1}</h6>
-                              </div>
-                              <div className="card-body">
-                                <p>ID: {embedding.id}</p>
-                                <p>Tanggal: {new Date(embedding.created_at).toLocaleString()}</p>
-                              </div>
-                              <div className="card-footer">
-                                <button 
-                                  className="btn btn-sm btn-danger"
-                                  onClick={() => handleDeleteEmbedding(embedding.id)}
-                                >
-                                  Hapus Foto
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="card">
-                  <div className="card-body text-center">
-                    <p>Pilih pengguna untuk melihat detail foto</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         )}
         
